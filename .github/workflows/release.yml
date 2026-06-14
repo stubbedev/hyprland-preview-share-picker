@@ -1,0 +1,33 @@
+name: release
+
+# Fires on a pushed `vX.Y.Z` tag. Builds the package through nix as a
+# gate (the release only publishes if it builds at the tagged commit),
+# then cuts a GitHub release with auto-generated notes. No prebuilt
+# binary is attached: this is a gtk4 app dynamically linked against
+# /nix/store paths, so a tarball wouldn't run off-box — users install
+# via `nix profile install`, the AUR, or `cargo install` from source.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - name: build package
+        run: nix build .#hyprland-preview-share-picker --print-build-logs
+      - name: publish github release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

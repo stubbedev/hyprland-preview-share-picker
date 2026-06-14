@@ -26,6 +26,8 @@ jobs:
       # apt gtk4-dev install needed.
       - name: nix flake check
         run: nix flake check --print-build-logs
+      - name: nix build package
+        run: nix build .#hyprland-preview-share-picker --print-build-logs
       - name: rustfmt
         run: nix develop -c cargo fmt --all --check
       - name: clippy
