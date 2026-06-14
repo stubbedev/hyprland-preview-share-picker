@@ -44,7 +44,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoLock.lockFile = ./Cargo.lock;
 
   meta = {
-    homepage = "https://github.com/WhySoBad/hyprland-preview-share-picker";
+    homepage = "https://github.com/stubbedev/hyprland-preview-share-picker";
     license = lib.licenses.mit;
     maintainers = lib.maintainers.faukah;
   };

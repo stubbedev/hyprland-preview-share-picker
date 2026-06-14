@@ -11,27 +11,25 @@
 
 ### Using pacman
 
-On Arch-based systems, the easiest and recommended way to install the share picker is using the offical [hyprland-preview-share-picker-git](https://aur.archlinux.org/packages/hyprland-preview-share-picker-git) AUR-package.
-
-Alternatively, the following `PKGBUILD` can be used to build and install the package locally. Simply copy the `PKGBUILD` source to an empty directory on your system and install the package and all it's dependencies using `makepkg -si`
+On Arch-based systems, the following `PKGBUILD` can be used to build and install the package locally. Simply copy the `PKGBUILD` source to an empty directory on your system and install the package and all it's dependencies using `makepkg -si`
 
 <details>
 <summary><b>PKGBUILD source</b></summary>
 
 ```bash
 pkgname="hyprland-preview-share-picker-git"
-pkgver=v0.1.0
+pkgver=v0.2.0
 pkgrel=1
 pkgdesc="An alternative share picker for hyprland with window and monitor previews"
 arch=(x86_64)
-url="https://github.com/WhySoBad/hyprland-preview-share-picker"
+url="https://github.com/stubbedev/hyprland-preview-share-picker"
 license=(MIT)
 depends=('gtk4' 'gtk4-layer-shell' 'xdg-desktop-portal-hyprland' 'hyprland')
-makedepends=(cargo-nightly)
+makedepends=(cargo)
 optdepends=(
   'slurp: default tool for selecting share regions'
 )
-source=("$pkgname::git+https://github.com/WhySoBad/hyprland-preview-share-picker")
+source=("$pkgname::git+https://github.com/stubbedev/hyprland-preview-share-picker")
 md5sums=('SKIP')
 
 pkgver() {
@@ -45,14 +43,12 @@ prepare() {
     git config submodule.subprojects/lib.url "$srcdir/lib"
     git -c protocol.file.allow=always submodule update
 
-    export RUSTUP_TOOLCHAIN=nightly
     cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
 }
 
 build() {
     cd "$pkgname"
 
-    export RUSTUP_TOOLCHAIN=nightly
     export CARGO_TARGET_DIR=target
 
     cargo build --frozen --release
@@ -79,7 +75,7 @@ To install this project using Nix:
 ```nix
 inputs = {
   hyprland-preview-share-picker = {
-    url = "github:WhySoBad/hyprland-preview-share-picker";
+    url = "github:stubbedev/hyprland-preview-share-picker";
     # You may optionally override the nixpkgs input to save space.
     inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -117,11 +113,11 @@ The following dependencies are needed:
 
 > Depending on your distribution the names may differ, the above names are for the Arch and AUR packages
 
-The project is built using the rust nightly toolchain, make sure you're using it for this build.
+The project builds on stable rust (edition 2024, so rust 1.85 or newer).
 
 ```bash
 # clone the repository with it's submodules
-git clone --recursive https://github.com/WhySoBad/hyprland-preview-share-picker
+git clone --recursive https://github.com/stubbedev/hyprland-preview-share-picker
 
 cd ./hyprland-preview-share-picker
 
@@ -148,6 +144,16 @@ screencopy {
 ```
 
 After changing the config the portal needs to be restarted.
+
+### Keybindings
+
+The picker is keyboard-navigable:
+
+- start typing to filter the windows grid (the search field is focused on launch)
+- `Enter` selects the first matching window
+- `Down` moves focus from the search field into the grid, then arrow keys navigate and `Enter`/`Space` selects
+- `Alt`+`1`/`2`/`3` switch between the Windows, Outputs and Region tabs
+- `Esc` closes the picker
 
 ## Configuration
 
@@ -187,6 +193,12 @@ classes:
   image: image
   # css classname of the label inside the card
   image_label: image-label
+  # css classname of the window class label inside the card
+  image_class_label: image-class-label
+  # css classname of the search entry above the notebook
+  search_entry: search-entry
+  # css classname of the placeholder shown when a page has no items
+  placeholder: placeholder
   # css classname of the notebook containing all pages
   notebook: notebook
   # css classname of a label of the notebook
@@ -202,7 +214,7 @@ windows:
   # minimum amount of image cards per row on the windows page
   min_per_row: 3
   # maximum amount of image cards per row on the windows page
-  max_per_row: 999
+  max_per_row: 4
   # number of clicks needed to select a window
   clicks: 2
   # spacing in pixels between the window cards
