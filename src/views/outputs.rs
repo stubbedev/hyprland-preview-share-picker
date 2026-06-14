@@ -135,6 +135,19 @@ impl View for OutputsView<'_> {
         let scrolled_window =
             ScrolledWindow::builder().child(&container).css_classes([self.config.classes.notebook_page.as_str()]).build();
 
+        if self.manager.outputs.is_empty() {
+            let placeholder = Label::builder()
+                .label("No outputs available")
+                .halign(gtk4::Align::Center)
+                .valign(gtk4::Align::Center)
+                .vexpand(true)
+                .hexpand(true)
+                .css_classes([self.config.classes.placeholder.as_str()])
+                .build();
+            scrolled_window.set_child(Some(&placeholder));
+            return scrolled_window;
+        }
+
         self.manager.outputs.iter().for_each(|(wl_output, output)| {
             let name = match &output.name {
                 Some(name) => name,
@@ -155,7 +168,7 @@ impl View for OutputsView<'_> {
     }
 
     fn label(&self) -> Label {
-        Label::builder().css_classes([self.config.classes.tab_label.as_str()]).label("Outputs").build()
+        Label::builder().css_classes([self.config.classes.tab_label.as_str()]).label("Outputs").hexpand(true).build()
     }
 }
 

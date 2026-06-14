@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use glib::{clone, variant::ToVariant};
 use gtk4::{
-    Box, FlowBox, FlowBoxChild, GestureClick, Label, Picture, ScrolledWindow,
+    Box, FlowBox, FlowBoxChild, GestureClick, Label, Overlay, Picture, ScrolledWindow, Spinner,
     prelude::{BoxExt, EventControllerExt, FlowBoxChildExt, WidgetExt},
 };
 use hyprland::{
@@ -72,7 +72,7 @@ impl View for WindowsView<'_> {
                 Some(client) => client,
                 None => return log::error!("unable to find hyprland client which matches toplevel class and title"),
             };
-            let monitor = match self.monitors.iter().find(|m| m.id == client.monitor) {
+            let monitor = match self.monitors.iter().find(|m| Some(m.id) == client.monitor) {
                 Some(monitor) => monitor,
                 None => return log::error!("unable to find hyprland monitor for hyprland client"),
             };
@@ -93,6 +93,21 @@ impl View for WindowsView<'_> {
             container.insert(&card, 0);
         });
 
+        if cards == 0 {
+            // FlowBox has no built-in empty placeholder; swap the page
+            // content for a centered label so the tab isn't just blank.
+            let placeholder = Label::builder()
+                .label("No windows available")
+                .halign(gtk4::Align::Center)
+                .valign(gtk4::Align::Center)
+                .vexpand(true)
+                .hexpand(true)
+                .css_classes([self.config.classes.placeholder.as_str()])
+                .build();
+            scrolled_window.set_child(Some(&placeholder));
+            return scrolled_window;
+        }
+
         // if there are less cards than max, spread them evenly on a single row
         container.set_max_children_per_line(self.config.windows.max_per_row.min(cards));
 
@@ -100,7 +115,7 @@ impl View for WindowsView<'_> {
     }
 
     fn label(&self) -> Label {
-        Label::builder().css_classes([self.config.classes.tab_label.as_str()]).label("Windows").build()
+        Label::builder().css_classes([self.config.classes.tab_label.as_str()]).label("Windows").hexpand(true).build()
     }
 }
 
@@ -126,11 +141,12 @@ impl<'a> WindowCard<'a> {
     pub fn build(self) -> Result<FlowBoxChild, String> {
         let (tx, rx) = tokio::sync::oneshot::channel();
         let picture = self.build_picture();
-        let card = self.build_card(&picture);
+        let spinner = Spinner::builder().spinning(true).halign(gtk4::Align::Center).valign(gtk4::Align::Center).build();
+        let card = self.build_card(&picture, &spinner);
         let container = self.build_card_container(&card);
 
         self.request_frame(tx);
-        self.update_frame_lazily(card.clone(), picture.clone(), rx);
+        self.update_frame_lazily(card.clone(), picture.clone(), spinner.clone(), rx);
 
         Ok(container)
     }
@@ -145,7 +161,7 @@ impl<'a> WindowCard<'a> {
             .build()
     }
 
-    fn build_card(&self, picture: &Picture) -> Box {
+    fn build_card(&self, picture: &Picture, spinner: &Spinner) -> Box {
         let container = Box::builder()
             .orientation(gtk4::Orientation::Vertical)
             .vexpand(false)
@@ -155,22 +171,48 @@ impl<'a> WindowCard<'a> {
             .css_classes([self.config.classes.image_card.as_str(), self.config.classes.image_card_loading.as_str()])
             .build();
 
+        // Overlay the spinner on the (still empty) picture so the card
+        // shows it's loading rather than rendering a blank box.
+        let overlay = Overlay::builder().child(picture).build();
+        overlay.add_overlay(spinner);
+
+        // Fall back to the window class when the title is empty so the
+        // card never shows a blank primary label.
+        let title =
+            if self.toplevel.title.trim().is_empty() { self.toplevel.class.as_str() } else { self.toplevel.title.as_str() };
         let label = Label::builder()
             .max_width_chars(1)
-            .label(self.toplevel.title.as_str())
+            .label(title)
             .ellipsize(gtk4::pango::EllipsizeMode::End)
             .single_line_mode(true)
             .css_classes([self.config.classes.image_label.as_str()])
             .hexpand(false)
             .build();
 
-        container.append(picture);
+        // Secondary label with the app class to disambiguate windows
+        // that share a title.
+        let class_label = Label::builder()
+            .max_width_chars(1)
+            .label(self.toplevel.class.as_str())
+            .ellipsize(gtk4::pango::EllipsizeMode::End)
+            .single_line_mode(true)
+            .css_classes([self.config.classes.image_class_label.as_str()])
+            .hexpand(false)
+            .build();
+
+        container.append(&overlay);
         container.append(&label);
+        container.append(&class_label);
         container
     }
 
     fn build_card_container(&self, card: &Box) -> FlowBoxChild {
         let container = FlowBoxChild::builder().halign(gtk4::Align::Fill).valign(gtk4::Align::Fill).child(card).build();
+
+        // Full, un-truncated title + class on hover.
+        container.set_tooltip_text(Some(&format!("{}\n{}", self.toplevel.title, self.toplevel.class)));
+        // Searchable text read back by the FlowBox filter func in app.rs.
+        container.set_widget_name(&format!("{} {}", self.toplevel.title, self.toplevel.class).to_lowercase());
 
         let gesture = GestureClick::new();
         let clicks = self.config.windows.clicks;
@@ -233,7 +275,7 @@ impl<'a> WindowCard<'a> {
         ));
     }
 
-    fn update_frame_lazily(&self, card: Box, picture: Picture, rx: Receiver<Image>) {
+    fn update_frame_lazily(&self, card: Box, picture: Picture, spinner: Spinner, rx: Receiver<Image>) {
         let id = self.toplevel.id;
         let loading_class = self.config.classes.image_card_loading.clone();
         glib::spawn_future_local(async move {
@@ -241,6 +283,7 @@ impl<'a> WindowCard<'a> {
                 Ok(img) => img,
                 Err(err) => {
                     log::error!("unable to receive image for toplevel {id}: {err}");
+                    spinner.set_visible(false);
                     card.remove_css_class(&loading_class);
                     return;
                 }
@@ -252,6 +295,7 @@ impl<'a> WindowCard<'a> {
             };
 
             picture.set_pixbuf(Some(&pixbuf));
+            spinner.set_visible(false);
             card.remove_css_class(&loading_class);
         });
     }

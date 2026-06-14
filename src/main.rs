@@ -4,7 +4,7 @@ use cli::Cli;
 use config::Config;
 use hyprland_preview_share_picker_lib::toplevel::Toplevel;
 use log::LevelFilter;
-use schemars::r#gen::SchemaSettings;
+use schemars::generate::SchemaSettings;
 use std::io::Write;
 
 mod app;

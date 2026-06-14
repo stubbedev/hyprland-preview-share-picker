@@ -80,6 +80,6 @@ impl View for RegionView<'_> {
     }
 
     fn label(&self) -> Label {
-        Label::builder().css_classes([self.config.classes.tab_label.as_str()]).label("Region").build()
+        Label::builder().css_classes([self.config.classes.tab_label.as_str()]).label("Region").hexpand(true).build()
     }
 }

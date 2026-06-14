@@ -1,27 +1,27 @@
 [package]
 name = "hyprland-preview-share-picker"
 description = "An alternative share picker for hyprland with window and monitor previews"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
-image = "0.25.5"
-log = "0.4.25"
+image = "0.25.10"
+log = "0.4.32"
 hyprland-preview-share-picker-lib = { path = "./lib", features = ["hyprland-rs"] }
-wayland-client = "0.31.8"
-hyprland = "0.4.0-beta.1"
-clap = { version = "4.5.28", features = ["derive"] }
-serde = { version = "1.0.217", features = ["derive"] }
+wayland-client = "0.31.14"
+hyprland = "0.4.0-beta.2"
+clap = { version = "4.6.1", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
-env_logger = "0.11.6"
-gtk4 = { version = "0.9.5", features = ["v4_8"] }
-gtk4-layer-shell = "0.4.0"
-regex = "1.11.1"
-rsass = "0.29.0"
-shlex = "1.3.0"
-schemars = "0.8.21"
-serde_json = "1.0.138"
+env_logger = "0.11.10"
+gtk4 = { version = "0.11.3", features = ["v4_8"] }
+gtk4-layer-shell = "0.8.0"
+regex = "1.12.4"
+rsass = "0.29.2"
+shlex = "2.0.1"
+schemars = "1.2.1"
+serde_json = "1.0.150"
 serde_yaml = "0.9.34"
-glib = "0.20.7"
-tokio = { version = "1.43.0", features = ["rt-multi-thread"] }
-chrono = "0.4.39"
+glib = "0.22.7"
+tokio = { version = "1.52.3", features = ["rt-multi-thread"] }
+chrono = "0.4.45"
