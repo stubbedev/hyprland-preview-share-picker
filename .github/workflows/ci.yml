@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nix:
+    name: nix flake check + lint + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: DeterminateSystems/nix-installer-action@v22
+
+      # nix flake check builds the package + dev shell with all gtk4
+      # deps pinned by flake.lock. fmt/clippy/test then run through the
+      # same dev shell so CI and `just lint` share one toolchain — no
+      # apt gtk4-dev install needed.
+      - name: nix flake check
+        run: nix flake check --print-build-logs
+      - name: rustfmt
+        run: nix develop -c cargo fmt --all --check
+      - name: clippy
+        run: nix develop -c cargo clippy --all-targets --all-features -- -D warnings
+      - name: test
+        run: nix develop -c cargo test --all

@@ -1,11 +1,19 @@
 fn main() {
     let version =
         match std::process::Command::new("git").arg("describe").arg("--long").arg("--abbrev=7").arg("--tags").output() {
-            Ok(output) => {
+            // `git describe --tags` fails (exit != 0, empty stdout) when the
+            // checkout has no tags — e.g. a shallow clone or a fork that
+            // never fetched them. Guard on the exit status and the expected
+            // `<tag>-<rev>-<hash>` shape instead of blindly indexing, which
+            // panicked with "byte index 1 out of bounds" on empty output.
+            Ok(output) if output.status.success() => {
                 let str = String::from_utf8_lossy(&output.stdout);
-                let split = str.trim().split('-').collect::<Vec<_>>();
-                format!("{}-r{}-{}", &split[0][1..], split[1], split[2])
+                match str.trim().split('-').collect::<Vec<_>>().as_slice() {
+                    [tag, rev, hash] => format!("{}-r{}-{}", tag.strip_prefix('v').unwrap_or(tag), rev, hash),
+                    _ => String::from("unknown"),
+                }
             }
+            Ok(_) => String::from("unknown"),
             Err(err) => {
                 println!("cargo::warning=Unable to get git version: {err:#}");
                 String::from("unknown")
