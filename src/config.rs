@@ -169,8 +169,6 @@ pub struct ClassesConfig {
     pub image_label: String,
     /// class applied to the window class label widget
     pub image_class_label: String,
-    /// class applied to the search entry above the notebook
-    pub search_entry: String,
     /// class applied to the placeholder label shown when a page has no items
     pub placeholder: String,
     /// class applied to the notebook widget
@@ -194,7 +192,6 @@ impl Default for ClassesConfig {
             image: String::from("image"),
             image_label: String::from("image-label"),
             image_class_label: String::from("image-class-label"),
-            search_entry: String::from("search-entry"),
             placeholder: String::from("placeholder"),
             notebook: String::from("notebook"),
             tab_label: String::from("tab-label"),

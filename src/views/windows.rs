@@ -211,8 +211,6 @@ impl<'a> WindowCard<'a> {
 
         // Full, un-truncated title + class on hover.
         container.set_tooltip_text(Some(&format!("{}\n{}", self.toplevel.title, self.toplevel.class)));
-        // Searchable text read back by the FlowBox filter func in app.rs.
-        container.set_widget_name(&format!("{} {}", self.toplevel.title, self.toplevel.class).to_lowercase());
 
         let gesture = GestureClick::new();
         let clicks = self.config.windows.clicks;

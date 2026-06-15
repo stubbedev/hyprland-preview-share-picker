@@ -149,9 +149,7 @@ After changing the config the portal needs to be restarted.
 
 The picker is keyboard-navigable:
 
-- start typing to filter the windows grid (the search field is focused on launch)
-- `Enter` selects the first matching window
-- `Down` moves focus from the search field into the grid, then arrow keys navigate and `Enter`/`Space` selects
+- arrow keys navigate the windows grid, `Enter`/`Space` selects
 - `Alt`+`1`/`2`/`3` switch between the Windows, Outputs and Region tabs
 - `Esc` closes the picker
 
@@ -195,8 +193,6 @@ classes:
   image_label: image-label
   # css classname of the window class label inside the card
   image_class_label: image-class-label
-  # css classname of the search entry above the notebook
-  search_entry: search-entry
   # css classname of the placeholder shown when a page has no items
   placeholder: placeholder
   # css classname of the notebook containing all pages
